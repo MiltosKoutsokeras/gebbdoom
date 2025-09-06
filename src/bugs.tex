@@ -100,3 +100,42 @@ From there, the damage is done. The engine renders the other side of the BSP and
 There is an amusing special case of infighting which involves exploding barrels. When a barrel is damaged, the engine "memorizes" which entity was responsible for it. When the barrel actually explodes the source of the damage is passed to all damaged entities so they can retaliate.\\
 \par
 What can happen is that a monster triggers a barrel to explode and gets injured by the blast in the process. In this occurrence, monsters with a melee attack (Cacodemon, Imp, Hellknight) will "tear themselves apart" while those only capable of range attack (former humans) will go nuts and fire blindly at random, possibly triggering further monster infighting.
+
+
+
+
+
+
+
+
+
+\section{Always Run overflow}
+Much to the dismay of players, they was not "always run" toggle in \doom{} engine. However players found a trick. By opening \doom{} config file and setting the value of \cw{joyb\_speed} manually to \cw{29}, they could in fact always run.\\
+\par
+If that did not scream "buffer over-read" to you, that fact that \cw{29} worked on DOOM v1.9 only while a value of \cw{31} was required for Final DOOM should achieve to convince you.\\
+\par 
+What happens under the hood is that there is not boundary check when checking the joystick button array. By setting the value to a non-existent joystick button number, the engine reads way past the joystick button array.\\
+\par
+\ccode{speed.c}
+\par
+To understand where these values of \cw{29}/\cw{31} lands us, we need to take a look at how the variables are declared.\\
+\par
+\ccode{joybuttons.c}
+\par
+Where does it read? With \cw{joybuttons initialized at the second entry in \cw{joyarray}, we need to also know how big a \cw{bool} is in DOOM.}\\
+\par
+
+\ccode{typedef_bool.c}
+\par
+Since the code was written before either C or C++ has \cw{bool} in their standard, \doom{} use an enum where each elements is a four bytes integer. This means the values of \cw{29}/\cw{31} lands somewhere inside \cw{savedescription} which hold the name when saving a game. What is likely is that there used to be something before \cw{savegameslot} which made \cw{29}/\cw{31} land on \cw{savedescription} character pointer. This was guaranteed to be different from zero, which constantly enabled "running mode".\\
+\par
+
+
+
+
+
+
+
+
+
+\trivia{To make the game more fun, John Romero cranked up the mouvement speed of the DOOM guy. In real-life they could walk at 21.5 miles an hour and runs as 43 miles an hour\footnote{Source: https://www.doomworld.com/vb/doom-general/5909-so-just-how-fast-does-the-marine-run/}!}
